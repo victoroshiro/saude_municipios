@@ -123,7 +123,6 @@ tbody tr.sel { background: var(--vermelho-claro); box-shadow: inset 3px 0 0 var(
 .st { border: 1px solid var(--linha); border-radius: 12px; padding: 14px; display: grid; gap: 6px; align-content: start; }
 .st .tag { justify-self: start; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; }
 .tag.fora { background: #EFE9EA; color: var(--suave); }
-.tag.pend { background: #FFF3DD; color: var(--alerta); }
 .st b { color: var(--tinta); }
 .st p { margin: 0; font-size: 13.5px; }
 .notas { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13.5px; }
@@ -233,13 +232,11 @@ tbody tr.sel { background: var(--vermelho-claro); box-shadow: inset 3px 0 0 var(
 
   <section class="cartao">
     <div>
-      <div class="rotulo">Estoques e repasses</div>
-      <h2>O que ainda não está no painel e por quê</h2>
+      <div class="rotulo">Estoques</div>
+      <h2>Por que o painel não mostra estoques de remédios</h2>
     </div>
-    <div class="status">
+    <div class="status" style="grid-template-columns:minmax(0,1fr)">
       <div class="st"><span class="tag fora">Avaliado e excluído</span><b>Estoques de remédios (BNAFAR)</b><p>A base oficial cobre só 3.114 dos 5.571 municípios, tem 34% dos lotes registrados como vencidos e está marcada pelo Ministério como "em manutenção". Usá-la mostraria falta de remédio onde pode não haver.</p></div>
-      <div class="st"><span class="tag pend">Pendente</span><b>Repasse federal para o postinho (CBAF)</b><p>Valor fixo por habitante, de R$ 8,20 a R$ 9,05 por ano conforme o IDHM do município (Portaria GM/MS nº 9.887/2025). Será incluído quando o anexo com o valor de cada município for obtido.</p></div>
-      <div class="st"><span class="tag pend">Pendente</span><b>Agentes Comunitários de Saúde</b><p>O número por município sai de um relatório público do e-Gestor AB, gerado por formulário. Será incluído na próxima atualização.</p></div>
     </div>
   </section>
 

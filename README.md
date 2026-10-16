@@ -277,7 +277,7 @@ Tabela `saida/saude_municipios.*`: uma linha por município, 37 colunas. Na plan
 3. **Ranking de municípios**, ordenável por cinco indicadores.
 4. **Série histórica** da Farmácia Popular (dezembro de 2016 a agosto de 2026) e **gráfico por estado**.
 5. **Preços editáveis**: mudar o custo mensal de um tratamento recalcula o painel inteiro. Há os cenários mínimo e mediano.
-6. **Estoques e repasses**: explica o que ficou de fora e por quê.
+6. **Estoques**: explica por que a base oficial de estoques não foi usada.
 7. **Como ler**: fontes, regras e cuidados.
 
 **Rodar localmente**
