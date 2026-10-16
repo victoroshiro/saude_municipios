@@ -1,0 +1,13 @@
+# Ambiente Python
+.venv/
+__pycache__/
+*.pyc
+
+# Dados brutos (≈ 2,7 GB) e intermediários: baixar seguindo o README
+brutos/
+trabalho/
+
+# Firebase e sistema
+web/.firebase/
+.firebaserc.local
+.DS_Store

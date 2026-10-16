@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Painel Saúde e Remédios</title>
+<meta name="description" content="Quantas pessoas dependem da Farmácia Popular e do SUS em cada município, e quanto pagariam do bolso sem o programa.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%23C8102E'/%3E%3Cpath d='M42 20h16v22h22v16H58v22H42V58H20V42h22z' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+/* Layout: painel de consulta. Topo com totais do Brasil; filtros fixos; coluna do município à esquerda e ranking à direita;
+   abaixo, séries históricas, preços editáveis e notas de método. Identidade: vermelho do PT dominante, branco e grafite. */
+:root {
+  --vermelho: #C8102E; --vermelho-esc: #8E0C22; --vermelho-claro: #FBE8EB;
+  --tinta: #1C1A1D; --texto: #3B373C; --suave: #75707A; --linha: #E7E1E3;
+  --fundo: #F7F4F4; --papel: #FFFFFF;
+  --h: #C8102E; --d: #EE6A3C; --hd: #8E0C22; --a: #E8A33D; --cinza: #8A8F98;
+  --ok: #2E7D4F; --alerta: #B26B00;
+  --display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --corpo: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fundo); color: var(--texto); font-family: var(--corpo); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+.num { font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 3px solid var(--a); outline-offset: 2px; }
+button, input, select { font-family: inherit; font-size: inherit; }
+
+.topo { background: var(--vermelho); color: #fff; padding-top: env(safe-area-inset-top, 0px); }
+.topo-in { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 22px 26px; display: grid; gap: 18px; }
+.marca { display: flex; align-items: center; gap: 12px; }
+.marca svg { width: 30px; height: 30px; flex: none; }
+.marca h1 { margin: 0; font-family: var(--display); font-weight: 800; font-size: clamp(26px, 4vw, 38px); line-height: 1; letter-spacing: .01em; }
+.marca p { margin: 2px 0 0; font-size: 14px; color: rgba(255,255,255,.85); }
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 1px; background: rgba(255,255,255,.22); border-radius: 12px; overflow: hidden; }
+@media (max-width: 980px) { .kpis { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media (max-width: 520px) { .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+.kpi { background: var(--vermelho-esc); padding: 12px 14px; display: grid; gap: 2px; align-content: start; }
+.kpi b { font-family: var(--display); font-size: 28px; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.kpi span { font-size: 12.5px; color: rgba(255,255,255,.85); line-height: 1.3; }
+
+.filtros { position: sticky; top: 0; z-index: 10; background: var(--papel); border-bottom: 1px solid var(--linha); box-shadow: 0 2px 8px rgba(0,0,0,.04); }
+.filtros-in { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 10px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: end; }
+.campo { display: grid; gap: 3px; min-width: 0; }
+.campo label { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--suave); }
+.campo select, .campo input { height: 38px; border: 1px solid var(--linha); border-radius: 8px; padding: 0 10px; background: var(--papel); color: var(--tinta); }
+.campo input[type=search] { width: min(340px, 80vw); }
+.seg { display: inline-flex; border: 1px solid var(--linha); border-radius: 8px; overflow: hidden; height: 38px; }
+.seg button { border: 0; background: var(--papel); padding: 0 12px; cursor: pointer; color: var(--texto); font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--vermelho); color: #fff; }
+.limpar { height: 38px; border: 1px solid var(--linha); background: var(--papel); border-radius: 8px; padding: 0 12px; cursor: pointer; color: var(--suave); }
+
+main { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 22px 60px; display: grid; gap: 22px; }
+.linha2 { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+@media (max-width: 980px) { .linha2 { grid-template-columns: minmax(0,1fr); } }
+.cartao { background: var(--papel); border: 1px solid var(--linha); border-radius: 14px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.cartao h2 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 22px; line-height: 1.1; color: var(--tinta); }
+.cartao h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--tinta); }
+.sub { font-size: 13px; color: var(--suave); margin: 0; }
+.rotulo { font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--vermelho); }
+
+.local-cab { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.local-cab h2 { font-size: 30px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.pill.peq { background: #FFF3DD; color: var(--alerta); }
+.pill.reg { background: var(--vermelho-claro); color: var(--vermelho-esc); }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--suave); }
+.meta b { color: var(--tinta); font-weight: 600; }
+
+.bloco { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--linha); }
+.barras { display: grid; gap: 8px; }
+.barra { display: grid; grid-template-columns: 150px minmax(0,1fr) 92px; gap: 10px; align-items: center; font-size: 14px; }
+@media (max-width: 520px) { .barra { grid-template-columns: 110px minmax(0,1fr) 80px; font-size: 13px; } }
+.barra .trilho { height: 14px; background: #F1ECED; border-radius: 4px; overflow: hidden; }
+.barra .cheia { height: 100%; border-radius: 4px; }
+.barra .v { text-align: right; font-weight: 700; color: var(--tinta); font-variant-numeric: tabular-nums; }
+.comparativo { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
+@media (max-width: 520px) { .comparativo { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+.comp { background: var(--fundo); border-radius: 10px; padding: 10px; display: grid; gap: 1px; }
+.comp.atual { background: var(--vermelho-claro); }
+.comp b { font-family: var(--display); font-size: 24px; color: var(--tinta); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.comp span { font-size: 12px; color: var(--suave); }
+.grade4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
+@media (max-width: 620px) { .grade4 { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+.doenca { border: 1px solid var(--linha); border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; align-content: start; }
+.doenca .t { font-size: 12.5px; font-weight: 700; color: var(--suave); }
+.doenca b { font-family: var(--display); font-size: 26px; color: var(--tinta); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.doenca .n { font-size: 12px; color: var(--suave); line-height: 1.3; }
+.aviso { display: flex; gap: 10px; align-items: flex-start; background: #FFF8EC; border: 1px solid #F3DDB0; border-radius: 10px; padding: 10px 12px; font-size: 13.5px; color: #5A4520; }
+.aviso svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+.bolso { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px 16px; align-items: end; background: var(--vermelho); color: #fff; border-radius: 12px; padding: 14px 16px; }
+.bolso b { font-family: var(--display); font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums; }
+.bolso span { font-size: 13px; color: rgba(255,255,255,.88); }
+.frases { display: grid; gap: 8px; }
+.frase { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; align-items: center; background: var(--fundo); border-radius: 10px; padding: 10px 12px; font-size: 14px; color: var(--tinta); }
+.frase button { border: 1px solid var(--linha); background: var(--papel); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-weight: 600; color: var(--vermelho); white-space: nowrap; }
+
+.tabela { overflow: auto; max-height: 640px; border: 1px solid var(--linha); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+thead th { position: sticky; top: 0; background: var(--fundo); z-index: 1; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--suave); font-weight: 700; text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--linha); }
+td { padding: 7px 10px; border-bottom: 1px solid var(--linha); }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--vermelho-claro); }
+tbody tr.sel { background: var(--vermelho-claro); box-shadow: inset 3px 0 0 var(--vermelho); }
+.mini { font-size: 11.5px; color: var(--suave); }
+
+.graf svg { width: 100%; height: auto; display: block; overflow: visible; }
+.graf svg text { font-family: var(--corpo); font-size: 11.5px; fill: var(--suave); }
+.graf svg text.f { fill: var(--tinta); font-weight: 600; }
+.legenda { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--texto); }
+.legenda i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+.precos { display: grid; gap: 8px; }
+.preco { display: grid; grid-template-columns: 120px minmax(0,1fr) 130px; gap: 10px; align-items: center; font-size: 13.5px; }
+@media (max-width: 620px) { .preco { grid-template-columns: minmax(0,1fr); } }
+.preco input { height: 34px; border: 1px solid var(--linha); border-radius: 8px; padding: 0 8px; width: 100%; background: #FFFDE7; color: #0000CC; font-weight: 700; text-align: right; }
+.status { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
+@media (max-width: 880px) { .status { grid-template-columns: minmax(0,1fr); } }
+.st { border: 1px solid var(--linha); border-radius: 12px; padding: 14px; display: grid; gap: 6px; align-content: start; }
+.st .tag { justify-self: start; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; }
+.tag.fora { background: #EFE9EA; color: var(--suave); }
+.tag.pend { background: #FFF3DD; color: var(--alerta); }
+.st b { color: var(--tinta); }
+.st p { margin: 0; font-size: 13.5px; }
+.notas { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13.5px; }
+.rodape { background: var(--tinta); color: rgba(255,255,255,.75); font-size: 13px; }
+.rodape-in { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 22px calc(22px + env(safe-area-inset-bottom, 0px)); }
+.rodape b { color: #fff; }
+.tooltip { position: fixed; pointer-events: none; z-index: 30; background: var(--tinta); color: #fff; font-size: 12.5px; line-height: 1.35; padding: 7px 9px; border-radius: 8px; max-width: 240px; opacity: 0; transition: opacity .1s; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--tinta); color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 13.5px; opacity: 0; transition: opacity .15s; z-index: 40; }
+@media (max-width: 640px) {
+  .filtros { position: static; }
+  .bolso { grid-template-columns: minmax(0,1fr); }
+  .bolso b { font-size: 34px; }
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="topo-in">
+    <div class="marca">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4l13.9 28.2 31.1 4.5-22.5 21.9 5.3 31L50 74.9 22.2 89.6l5.3-31L5 36.7l31.1-4.5z" fill="#fff"/></svg>
+      <div>
+        <h1>Saúde e Remédios por Município</h1>
+        <p>Quem depende da Farmácia Popular e do SUS, e quanto pagaria do bolso sem o programa</p>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+  </div>
+</header>
+
+<div class="filtros">
+  <div class="filtros-in">
+    <div class="campo">
+      <label for="f-uf">Estado</label>
+      <select id="f-uf"><option value="">Brasil</option></select>
+    </div>
+    <div class="campo">
+      <label for="f-mun">Município</label>
+      <input id="f-mun" type="search" list="lista-mun" placeholder="Digite o nome da cidade" autocomplete="off">
+      <datalist id="lista-mun"></datalist>
+    </div>
+    <div class="campo">
+      <label>Cenário de preço</label>
+      <div class="seg" role="group" aria-label="Cenário de preço">
+        <button type="button" id="cen-min" aria-pressed="true">Mínimo</button>
+        <button type="button" id="cen-med" aria-pressed="false">Mediano</button>
+      </div>
+    </div>
+    <button type="button" class="limpar" id="limpar">Limpar seleção</button>
+  </div>
+</div>
+
+<main>
+  <div class="linha2">
+    <section class="cartao" id="painel-local" aria-live="polite"></section>
+
+    <section class="cartao">
+      <div>
+        <div class="rotulo">Ranking</div>
+        <h2 id="titulo-ranking">Municípios</h2>
+      </div>
+      <div class="campo">
+        <label for="f-ordem">Ordenar por</label>
+        <select id="f-ordem">
+          <option value="hd_total">Pessoas com remédio de pressão e diabetes</option>
+          <option value="fp_mil_reg">Farmácia Popular por mil hab. (região de saúde)</option>
+          <option value="bolso">Gasto do bolso por ano</option>
+          <option value="ac">Pacientes de alto custo</option>
+          <option value="qt">Pacientes em quimioterapia</option>
+        </select>
+      </div>
+      <div class="tabela">
+        <table>
+          <thead><tr><th>#</th><th>Município</th><th class="n" id="col-ordem">Valor</th><th class="n">População</th></tr></thead>
+          <tbody id="t-ranking"></tbody>
+        </table>
+      </div>
+      <p class="sub">Clique numa linha para ver o município. Mostrando os 200 primeiros.</p>
+    </section>
+  </div>
+
+  <section class="cartao">
+    <div>
+      <div class="rotulo">Tendência</div>
+      <h2>Quem depende da Farmácia Popular só aumenta</h2>
+      <p class="sub">Pessoas atendidas no mês com remédio gratuito, Brasil. Dezembro de cada ano e o mês mais recente.</p>
+    </div>
+    <div class="linha2">
+      <div class="graf"><svg id="g-serie" role="img" aria-label="Pessoas atendidas pela Farmácia Popular ao longo do tempo"></svg>
+        <div class="legenda"><span><i style="background:var(--h)"></i>Só pressão</span><span><i style="background:var(--hd)"></i>Pressão e diabetes</span><span><i style="background:var(--d)"></i>Só diabetes</span><span><i style="background:var(--a)"></i>Asma</span></div>
+      </div>
+      <div class="graf">
+        <h3>Farmácia Popular por mil habitantes, por estado</h3>
+        <svg id="g-uf" role="img" aria-label="Farmácia Popular por mil habitantes em cada estado"></svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="cartao">
+    <div>
+      <div class="rotulo">Preços</div>
+      <h2>Remédios da cesta e quanto custam sem o programa</h2>
+      <p class="sub">Tabela oficial da CMED (Anvisa), preço máximo ao consumidor de 09/10/2026, com ICMS de 18%. Os valores em amarelo podem ser alterados: todo o painel é recalculado.</p>
+    </div>
+    <div class="precos" id="precos"></div>
+  </section>
+
+  <section class="cartao">
+    <div>
+      <div class="rotulo">Estoques e repasses</div>
+      <h2>O que ainda não está no painel e por quê</h2>
+    </div>
+    <div class="status">
+      <div class="st"><span class="tag fora">Avaliado e excluído</span><b>Estoques de remédios (BNAFAR)</b><p>A base oficial cobre só 3.114 dos 5.571 municípios, tem 34% dos lotes registrados como vencidos e está marcada pelo Ministério como "em manutenção". Usá-la mostraria falta de remédio onde pode não haver.</p></div>
+      <div class="st"><span class="tag pend">Pendente</span><b>Repasse federal para o postinho (CBAF)</b><p>Valor fixo por habitante, de R$ 8,20 a R$ 9,05 por ano conforme o IDHM do município (Portaria GM/MS nº 9.887/2025). Será incluído quando o anexo com o valor de cada município for obtido.</p></div>
+      <div class="st"><span class="tag pend">Pendente</span><b>Agentes Comunitários de Saúde</b><p>O número por município sai de um relatório público do e-Gestor AB, gerado por formulário. Será incluído na próxima atualização.</p></div>
+    </div>
+  </section>
+
+  <section class="cartao">
+    <div>
+      <div class="rotulo">Como ler</div>
+      <h2>Fontes, regras e cuidados</h2>
+    </div>
+    <ul class="notas">
+      <li><b>Farmácia Popular</b> (Ministério da Saúde, agosto de 2026): pessoas atendidas no mês, contadas na cidade da <b>farmácia</b>. Municípios sem farmácia credenciada aparecem com zero e seus moradores são atendidos na região; por isso o painel mostra também o total da <b>região de saúde</b>.</li>
+      <li><b>Pressão e diabetes não se sobrepõem</b>: quem tem as duas doenças está só em "pressão e diabetes".</li>
+      <li><b>Câncer e alto custo</b> (DataSUS, junho de 2026): moradores do município, pelo campo de <b>residência</b> do paciente, mesmo tratados em outra cidade. Em municípios com menos de 20 mil habitantes, os números são baixos e oscilam: o painel destaca o total da região de saúde, como pedem as orientações do time.</li>
+      <li><b>HIV</b> (Ministério da Saúde, 31/12/2025): pessoas em tratamento regular, contadas no município do <b>serviço</b> que as acompanha. Cidades com menos de 50 pessoas em acompanhamento não são publicadas por sigilo.</li>
+      <li><b>Gasto do bolso</b>: pessoas atendidas no mês × custo mensal do tratamento × 12. Usa um remédio por doença na dose mais comum, então é conservador. Os R$ 180 por mês por idoso sugeridos inicialmente não têm fonte e ficam muito acima do preço oficial dos genéricos.</li>
+      <li><b>Não some as doenças</b> para dizer "X pessoas dependem do SUS": a mesma pessoa pode estar em mais de um programa, e as datas de referência são diferentes.</li>
+      <li>Só dados públicos e agregados por município. Nenhum dado individual foi usado.</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="rodape">
+  <div class="rodape-in"><b>Saúde e Remédios por Município</b> · Fontes: Ministério da Saúde (Farmácia Popular, DataSUS/SIA, Painel do HIV), Anvisa (CMED), IBGE. Atualizado em <span id="gerado"></span>.</div>
+</footer>
+<div class="tooltip" id="tip"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="dados.js"></script>
+<script>
+(function () {
+  "use strict";
+  var D = window.DADOS, NS = "http://www.w3.org/2000/svg";
+  var C = {}; D.campos.forEach(function (c, i) { C[c] = i; });
+  var MUN = D.municipios.map(function (r) { var o = {}; for (var k in C) o[k] = r[C[k]]; return o; });
+  var REG = D.regioes, LIM = D.limite_pequeno;
+  var porCod = {}; MUN.forEach(function (m) { porCod[m.cod] = m; });
+  var estado = { uf: "", cod: null, cen: "minimo", ordem: "hd_total" };
+  var precos = { minimo: {}, mediano: {} };
+  ["hipertensao", "diabetes", "asma"].forEach(function (k) { precos.minimo[k] = D.cesta[k].minimo; precos.mediano[k] = D.cesta[k].mediano; });
+
+  // ---------- utilitários ----------
+  function $(id) { return document.getElementById(id); }
+  function el(tag, a, txt) { var e = document.createElementNS(NS, tag); for (var k in a) if (a[k] != null) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; }
+  function limpar(s) { while (s.firstChild) s.removeChild(s.firstChild); }
+  var nf = new Intl.NumberFormat("pt-BR");
+  function int(v) { return v == null ? "—" : nf.format(Math.round(v)); }
+  function d1(v) { return v == null ? "—" : v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+  function grande(v) { if (v == null) return "—"; var a = Math.abs(v); if (a >= 1e9) return (v / 1e9).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " bi"; if (a >= 1e6) return (v / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mi"; if (a >= 1e4) return Math.round(v / 1e3).toLocaleString("pt-BR") + " mil"; return nf.format(Math.round(v)); }
+  function reais(v) { return "R$ " + grande(v); }
+  function reaisExtenso(v) { if (v >= 1e9) return "R$ " + (v / 1e9).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " bilhões"; if (v >= 1e6) return "R$ " + (v / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " milhões"; if (v >= 1e3) return "R$ " + Math.round(v / 1e3).toLocaleString("pt-BR") + " mil"; return "R$ " + nf.format(Math.round(v)); }
+  function porMil(v, p) { return p > 0 ? 1000 * v / p : 0; }
+  var tip = $("tip");
+  function mostrar(html, ev) { tip.innerHTML = html; tip.style.opacity = 1; var x = ev.clientX + 12; if (x + 250 > innerWidth) x = ev.clientX - 252; tip.style.left = x + "px"; tip.style.top = (ev.clientY + 12) + "px"; }
+  function esconder() { tip.style.opacity = 0; }
+  function toast(t) { var e = $("toast"); e.textContent = t; e.style.opacity = 1; clearTimeout(toast.t); toast.t = setTimeout(function () { e.style.opacity = 0; }, 1600); }
+  function largura(svg) { return Math.max(300, Math.round(svg.getBoundingClientRect().width)); }
+
+  // ---------- cálculos ----------
+  function bolso(o) { var p = precos[estado.cen]; return 12 * (o.h * p.hipertensao + o.d * p.diabetes + o.hd * (p.hipertensao + p.diabetes) + o.a * p.asma); }
+  function soma(lista) {
+    var o = { pop: 0, fp: 0, h: 0, d: 0, hd: 0, a: 0, ac: 0, qt: 0, rt: 0, hiv: 0, n: 0 };
+    lista.forEach(function (m) { for (var k in o) if (k !== "n") o[k] += m[k] || 0; o.n++; });
+    return o;
+  }
+  var BR = soma(MUN);
+  var UFS = {}; MUN.forEach(function (m) { (UFS[m.uf] = UFS[m.uf] || []).push(m); });
+  var UFSOMA = {}; Object.keys(UFS).forEach(function (u) { UFSOMA[u] = soma(UFS[u]); });
+
+  // ---------- topo ----------
+  function kpis() {
+    var b = bolso(BR);
+    var hiv = D.serie_hiv[D.serie_hiv.length - 1];
+    var itens = [
+      [grande(BR.fp), "pessoas atendidas na Farmácia Popular por mês (" + D.referencias.fp + ")"],
+      [grande(BR.h + BR.d + BR.hd), "com remédio gratuito de pressão ou diabetes"],
+      [grande(BR.a), "com remédio gratuito de asma"],
+      [grande(BR.ac + 0), "pacientes de remédio de alto custo (" + D.referencias.sia + ")"],
+      [grande(BR.qt), "pacientes em quimioterapia pelo SUS (" + D.referencias.sia + ")"],
+      [reais(b), "por ano do bolso, sem a Farmácia Popular (cenário " + (estado.cen === "minimo" ? "mínimo" : "mediano") + ")"]
+    ];
+    $("kpis").innerHTML = itens.map(function (k) { return '<div class="kpi"><b>' + k[0] + "</b><span>" + k[1] + "</span></div>"; }).join("");
+  }
+
+  // ---------- filtros ----------
+  Object.keys(UFS).sort().forEach(function (u) { var o = document.createElement("option"); o.value = u; o.textContent = u; $("f-uf").appendChild(o); });
+  function preencherLista() {
+    var lista = estado.uf ? UFS[estado.uf] : MUN;
+    $("lista-mun").innerHTML = lista.map(function (m) { return '<option value="' + m.nome.replace(/"/g, "&quot;") + " · " + m.uf + '"></option>'; }).join("");
+  }
+  $("f-uf").addEventListener("change", function () { estado.uf = this.value; if (estado.cod && porCod[estado.cod].uf !== estado.uf && estado.uf) estado.cod = null; preencherLista(); tudo(); });
+  $("f-mun").addEventListener("change", function () {
+    var v = this.value.split(" · "), alvo = MUN.filter(function (m) { return m.nome === v[0] && (!v[1] || m.uf === v[1]); })[0];
+    if (alvo) { estado.cod = alvo.cod; tudo(); }
+  });
+  $("limpar").addEventListener("click", function () { estado.cod = null; estado.uf = ""; $("f-uf").value = ""; $("f-mun").value = ""; preencherLista(); tudo(); });
+  ["min", "med"].forEach(function (k) {
+    $("cen-" + k).addEventListener("click", function () {
+      estado.cen = k === "min" ? "minimo" : "mediano";
+      $("cen-min").setAttribute("aria-pressed", String(k === "min")); $("cen-med").setAttribute("aria-pressed", String(k === "med"));
+      tudo();
+    });
+  });
+  $("f-ordem").addEventListener("change", function () { estado.ordem = this.value; ranking(); });
+
+  // ---------- painel do local ----------
+  var ICONE_AVISO = '<svg viewBox="0 0 24 24"><path d="M12 2L1 21h22z" fill="#E8A33D"/><path d="M12 9v5M12 17v.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
+  function barras(o, base) {
+    var itens = [["Só pressão", o.h, "var(--h)"], ["Pressão e diabetes", o.hd, "var(--hd)"], ["Só diabetes", o.d, "var(--d)"], ["Asma", o.a, "var(--a)"]];
+    var max = Math.max.apply(null, itens.map(function (i) { return i[1]; })) || 1;
+    return '<div class="barras">' + itens.map(function (i) {
+      return '<div class="barra"><span>' + i[0] + '</span><div class="trilho"><div class="cheia" style="width:' + (100 * i[1] / max).toFixed(1) + '%;background:' + i[2] + '"></div></div><span class="v">' + int(i[1]) + "</span></div>";
+    }).join("") + "</div>";
+  }
+  function painel() {
+    var p = $("painel-local"), m = estado.cod ? porCod[estado.cod] : null;
+    var alvo, nome, reg = null, sub;
+    if (m) { alvo = m; nome = m.nome; reg = REG[m.reg]; }
+    else if (estado.uf) { alvo = UFSOMA[estado.uf]; nome = estado.uf; }
+    else { alvo = BR; nome = "Brasil"; }
+    var pequeno = m && m.pop < LIM;
+    var html = '<div><div class="rotulo">' + (m ? "Município" : (estado.uf ? "Estado" : "Visão geral")) + '</div><div class="local-cab"><h2>' + nome + (m ? " · " + m.uf : "") + "</h2>";
+    if (pequeno) html += '<span class="pill peq">Menos de ' + int(LIM) + " habitantes</span>";
+    html += '</div><div class="meta"><span>População <b>' + int(alvo.pop) + "</b></span>";
+    if (reg) html += "<span>Região de saúde <b>" + reg.nome + "</b> (" + reg.n + " municípios, " + int(reg.pop) + " hab.)</span>";
+    if (!m) html += "<span>Municípios <b>" + int(alvo.n) + "</b></span>";
+    html += "</div></div>";
+
+    // 1. Farmácia Popular
+    var hdTot = alvo.h + alvo.d + alvo.hd;
+    html += '<div class="bloco"><h3>1 · Quem pega remédio de graça na Farmácia Popular (' + D.referencias.fp + ")</h3>";
+    if (m && m.fp === 0) {
+      html += '<div class="aviso">' + ICONE_AVISO + "<span>" + m.nome + " não tem farmácia credenciada no programa. Os moradores retiram os remédios em cidades vizinhas: na região de saúde, <b>" + int(reg.h + reg.d + reg.hd) + " pessoas</b> pegam remédio de pressão ou diabetes.</span></div>";
+      html += barras(reg);
+    } else {
+      html += barras(alvo);
+    }
+    var fpMil = porMil(alvo.fp, alvo.pop);
+    var comps = [];
+    if (m) comps.push([m.nome, porMil(m.fp, m.pop), true]);
+    if (reg) comps.push(["Região de saúde", porMil(reg.fp, reg.pop), !m]);
+    if (m || estado.uf) { var u = UFSOMA[m ? m.uf : estado.uf]; comps.push([m ? m.uf : estado.uf, porMil(u.fp, u.pop), !m && !!estado.uf]); }
+    comps.push(["Brasil", porMil(BR.fp, BR.pop), !m && !estado.uf]);
+    html += '<p class="sub">Atendidos por mil habitantes (todos os remédios do programa):</p><div class="comparativo">' + comps.map(function (c) { return '<div class="comp' + (c[2] ? " atual" : "") + '"><b>' + d1(c[1]) + "</b><span>" + c[0] + "</span></div>"; }).join("") + "</div>";
+    html += "</div>";
+
+    // 2. Doenças graves
+    html += '<div class="bloco"><h3>2 · Câncer, alto custo e HIV no SUS</h3>';
+    if (pequeno) html += '<div class="aviso">' + ICONE_AVISO + "<span>Em cidades com menos de " + int(LIM) + " habitantes, câncer e alto custo são tratados em polos regionais e os números municipais são pequenos. O destaque é o total da <b>região de saúde " + reg.nome + "</b>; o número do município aparece embaixo.</span></div>";
+    function cartaoDoenca(t, vm, vr, nota) {
+      var princ = pequeno ? vr : vm, sec = pequeno ? "Só o município: " + int(vm) : (reg ? "Região de saúde: " + int(vr) : "");
+      return '<div class="doenca"><span class="t">' + t + "</span><b>" + int(princ) + '</b><span class="n">' + (pequeno ? "na região · " : "") + nota + (sec ? "<br>" + sec : "") + "</span></div>";
+    }
+    var hivTxt, hivNota;
+    if (m) {
+      hivTxt = m.hiv; hivNota = m.hiv == null ? "Sem serviço com 50+ pessoas na cidade; atendimento em outro município" : "em tratamento no serviço da cidade (" + D.referencias.hiv + ")";
+    } else { hivTxt = alvo.hiv; hivNota = "em tratamento (" + D.referencias.hiv + ")"; }
+    html += '<div class="grade4">' +
+      cartaoDoenca("Remédio de alto custo", alvo.ac, reg ? reg.ac : null, "pacientes moradores (" + D.referencias.sia + ")") +
+      cartaoDoenca("Quimioterapia", alvo.qt, reg ? reg.qt : null, "pacientes moradores") +
+      cartaoDoenca("Radioterapia", alvo.rt, reg ? reg.rt : null, "pacientes moradores") +
+      '<div class="doenca"><span class="t">HIV</span><b>' + int(hivTxt) + '</b><span class="n">' + hivNota + "</span></div></div></div>";
+
+    // 3. Bolso
+    var baseBolso = m && m.fp === 0 ? reg : alvo, b = bolso(baseBolso);
+    var pessoasBolso = baseBolso.h + baseBolso.d + baseBolso.hd + baseBolso.a;
+    html += '<div class="bloco"><h3>3 · Quanto sairia do bolso sem a Farmácia Popular</h3><div class="bolso"><div><b>' + reaisExtenso(b) + '</b><br><span>por ano, para ' + int(pessoasBolso) + " pessoas com pressão, diabetes ou asma" + (m && m.fp === 0 ? " da região de saúde" : "") + "</span></div><span>Cenário " + (estado.cen === "minimo" ? "mínimo<br>(genérico mais barato)" : "mediano<br>(preço mediano dos genéricos)") + "</span></div></div>";
+
+    // 4. Frases prontas
+    var frases = [];
+    if (m && m.fp > 0) {
+      frases.push("Em " + D.referencias.fp + ", " + int(hdTot) + " moradores de " + m.nome + " (" + m.uf + ") pegaram remédio de pressão ou diabetes de graça na Farmácia Popular.");
+      frases.push("Sem a Farmácia Popular, essas famílias de " + m.nome + " gastariam pelo menos " + reaisExtenso(bolso(m)) + " por ano com remédios.");
+    } else if (m) {
+      frases.push("Em " + D.referencias.fp + ", " + int(reg.h + reg.d + reg.hd) + " pessoas da região de " + reg.nome + ", onde fica " + m.nome + ", pegaram remédio de pressão ou diabetes de graça na Farmácia Popular.");
+    } else {
+      frases.push("Em " + D.referencias.fp + ", " + grande(hdTot) + " de pessoas " + (estado.uf ? "em " + estado.uf + " " : "no Brasil ") + "pegaram remédio de pressão ou diabetes de graça na Farmácia Popular.");
+      frases.push("Sem a Farmácia Popular, essas famílias gastariam pelo menos " + reaisExtenso(bolso(alvo)) + " por ano com remédios.");
+    }
+    if (m && (pequeno ? reg.qt : m.qt) > 0) frases.push((pequeno ? int(reg.qt) + " moradores da região de saúde de " + reg.nome : int(m.qt) + " moradores de " + m.nome) + " faziam quimioterapia pelo SUS em " + D.referencias.sia + ".");
+    html += '<div class="bloco"><h3>4 · Frases prontas para mensagem</h3><div class="frases">' + frases.map(function (f, i) { return '<div class="frase"><span id="fr-' + i + '">' + f + '</span><button type="button" data-fr="' + i + '">Copiar</button></div>'; }).join("") + '</div><p class="sub">Use sempre com a data: os números são de ' + D.referencias.fp + " (Farmácia Popular) e " + D.referencias.sia + " (SUS).</p></div>";
+
+    p.innerHTML = html;
+    p.querySelectorAll("button[data-fr]").forEach(function (bt) {
+      bt.addEventListener("click", function () {
+        var txt = $("fr-" + bt.dataset.fr).textContent;
+        var ok = function () { toast("Frase copiada"); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, function () { selecionar(bt); });
+        else selecionar(bt);
+      });
+    });
+  }
+  function selecionar(bt) { var r = document.createRange(); r.selectNodeContents($("fr-" + bt.dataset.fr)); var s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Texto selecionado: use Cmd+C ou Ctrl+C"); }
+
+  // ---------- ranking ----------
+  var ORDENS = {
+    hd_total: ["Pressão e diabetes", function (m) { return m.h + m.d + m.hd; }, int],
+    fp_mil_reg: ["Por mil hab. (região)", function (m) { var r = REG[m.reg]; return porMil(r.fp, r.pop); }, d1],
+    bolso: ["R$ por ano", function (m) { return bolso(m); }, reais],
+    ac: ["Alto custo", function (m) { return m.ac; }, int],
+    qt: ["Quimioterapia", function (m) { return m.qt; }, int]
+  };
+  function ranking() {
+    var o = ORDENS[estado.ordem], lista = (estado.uf ? UFS[estado.uf] : MUN).slice();
+    lista.sort(function (a, b) { return o[1](b) - o[1](a); });
+    $("col-ordem").textContent = o[0];
+    $("titulo-ranking").textContent = "Municípios" + (estado.uf ? " de " + estado.uf : " do Brasil");
+    $("t-ranking").innerHTML = lista.slice(0, 200).map(function (m, i) {
+      return '<tr data-cod="' + m.cod + '"' + (m.cod === estado.cod ? ' class="sel"' : "") + "><td class='mini'>" + (i + 1) + "</td><td>" + m.nome + " <span class='mini'>" + m.uf + (m.pop < LIM ? " · pequeno" : "") + "</span></td><td class='n'>" + o[2](o[1](m)) + "</td><td class='n'>" + int(m.pop) + "</td></tr>";
+    }).join("");
+    $("t-ranking").querySelectorAll("tr").forEach(function (tr) {
+      tr.addEventListener("click", function () { estado.cod = tr.dataset.cod; var m = porCod[estado.cod]; $("f-mun").value = m.nome + " · " + m.uf; painel(); ranking(); window.scrollTo({ top: $("painel-local").getBoundingClientRect().top + scrollY - 70, behavior: "smooth" }); });
+    });
+  }
+
+  // ---------- gráficos ----------
+  function serie() {
+    var s = $("g-serie"), W = largura(s), H = 260, L = 46, R = W - 12, T = 12, B = H - 28;
+    limpar(s); s.setAttribute("viewBox", "0 0 " + W + " " + H);
+    var dados = D.serie_fp, chaves = ["h", "hd", "d", "a"], cores = { h: "var(--h)", hd: "var(--hd)", d: "var(--d)", a: "var(--a)" };
+    var tot = dados.map(function (r) { return r.h + r.hd + r.d + r.a; }), max = Math.ceil(Math.max.apply(null, tot) / 2e6) * 2e6;
+    var bw = (R - L) / dados.length;
+    function y(v) { return B - v / max * (B - T); }
+    for (var t = 0; t <= max; t += 2e6) { s.appendChild(el("line", { x1: L, x2: R, y1: y(t), y2: y(t), stroke: "var(--linha)" })); s.appendChild(el("text", { x: L - 6, y: y(t) + 4, "text-anchor": "end" }, t ? (t / 1e6) + " mi" : "0")); }
+    dados.forEach(function (r, i) {
+      var x = L + i * bw + bw * 0.15, w = bw * 0.7, acc = 0;
+      chaves.forEach(function (k) {
+        var rect = el("rect", { x: x, y: y(acc + r[k]), width: w, height: y(acc) - y(acc + r[k]), fill: cores[k] });
+        rect.addEventListener("mousemove", function (ev) { mostrar("<b>" + r.mes + "</b>Só pressão " + int(r.h) + "<br>Pressão e diabetes " + int(r.hd) + "<br>Só diabetes " + int(r.d) + "<br>Asma " + int(r.a), ev); });
+        rect.addEventListener("mouseleave", esconder);
+        s.appendChild(rect); acc += r[k];
+      });
+      s.appendChild(el("text", { x: x + w / 2, y: B + 16, "text-anchor": "middle" }, r.mes.slice(3)));
+      if (i === dados.length - 1) s.appendChild(el("text", { x: x + w / 2, y: y(acc) - 6, "text-anchor": "middle", "class": "f" }, grande(acc)));
+    });
+  }
+  function graficoUF() {
+    var s = $("g-uf"), W = largura(s), lista = Object.keys(UFSOMA).map(function (u) { return [u, porMil(UFSOMA[u].fp, UFSOMA[u].pop)]; }).sort(function (a, b) { return b[1] - a[1]; });
+    var rowH = 17, T = 4, H = T + lista.length * rowH + 4, L = 30, R = W - 46, max = lista[0][1];
+    limpar(s); s.setAttribute("viewBox", "0 0 " + W + " " + H);
+    lista.forEach(function (d, i) {
+      var y = T + i * rowH, w = d[1] / max * (R - L), sel = d[0] === (estado.cod ? porCod[estado.cod].uf : estado.uf);
+      s.appendChild(el("text", { x: L - 6, y: y + 12, "text-anchor": "end", "class": sel ? "f" : null }, d[0]));
+      var r = el("rect", { x: L, y: y + 2, width: w, height: rowH - 5, rx: 2, fill: sel ? "var(--vermelho)" : "#E3A3AE", style: "cursor:pointer" });
+      r.addEventListener("click", function () { estado.uf = d[0]; estado.cod = null; $("f-uf").value = d[0]; $("f-mun").value = ""; preencherLista(); tudo(); });
+      r.addEventListener("mousemove", function (ev) { mostrar("<b>" + d[0] + "</b>" + d1(d[1]) + " atendidos por mil hab.<br>Clique para filtrar", ev); });
+      r.addEventListener("mouseleave", esconder);
+      s.appendChild(r);
+      s.appendChild(el("text", { x: L + w + 5, y: y + 12 }, d1(d[1])));
+    });
+  }
+
+  // ---------- preços editáveis ----------
+  function precosUI() {
+    var nomes = { hipertensao: "Pressão", diabetes: "Diabetes", asma: "Asma" };
+    $("precos").innerHTML = '<div class="preco mini"><b>Doença</b><b>Tratamento considerado</b><b style="text-align:right">R$ por mês (' + (estado.cen === "minimo" ? "mínimo" : "mediano") + ")</b></div>" +
+      Object.keys(nomes).map(function (k) {
+        return '<div class="preco"><b>' + nomes[k] + "</b><span>" + D.cesta[k].descricao + '</span><input type="number" step="0.01" min="0" id="pr-' + k + '" value="' + precos[estado.cen][k].toFixed(2) + '" aria-label="Custo mensal ' + nomes[k] + '"></div>';
+      }).join("") + '<p class="sub">Original: pressão R$ ' + D.cesta.hipertensao[estado.cen].toFixed(2).replace(".", ",") + " · diabetes R$ " + D.cesta.diabetes[estado.cen].toFixed(2).replace(".", ",") + " · asma R$ " + D.cesta.asma[estado.cen].toFixed(2).replace(".", ",") + '. <a href="#" id="pr-reset">Voltar aos preços oficiais</a></p>';
+    Object.keys(nomes).forEach(function (k) {
+      $("pr-" + k).addEventListener("change", function () { var v = parseFloat(this.value); if (v >= 0) { precos[estado.cen][k] = v; kpis(); painel(); ranking(); } });
+    });
+    $("pr-reset").addEventListener("click", function (e) { e.preventDefault(); ["hipertensao", "diabetes", "asma"].forEach(function (k) { precos[estado.cen][k] = D.cesta[k][estado.cen]; }); tudo(); });
+  }
+
+  function tudo() { kpis(); painel(); ranking(); graficoUF(); precosUI(); }
+  preencherLista();
+  tudo();
+  serie();
+  $("gerado").textContent = D.gerado_em;
+  var esp; addEventListener("resize", function () { clearTimeout(esp); esp = setTimeout(function () { serie(); graficoUF(); }, 150); });
+})();
+</script>
+</body>
+</html>
