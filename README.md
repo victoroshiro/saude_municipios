@@ -24,7 +24,6 @@ Tudo é feito com **dados públicos e agregados por município**. Nenhum dado in
 - [Painel web](#painel-web)
 - [Planilha Excel](#planilha-excel)
 - [Limitações e cuidados de leitura](#limitações-e-cuidados-de-leitura)
-- [Pendências](#pendências)
 
 ---
 
@@ -318,12 +317,3 @@ O arquivo é gerado sem valores calculados e o Excel recalcula as fórmulas ao a
 - **As datas de referência variam entre as bases** (de julho de 2025 a outubro de 2026). Os indicadores mudam devagar, mas cada número deve ser citado com a própria data.
 - **Não some as doenças** para dizer "X pessoas dependem do SUS".
 - **Gasto do bolso é uma estimativa conservadora,** não uma previsão.
-
----
-
-## Pendências
-
-- [ ] Agentes Comunitários de Saúde por município (relatório público do e-Gestor AB).
-- [ ] Repasse federal do Componente Básico da Assistência Farmacêutica (CBAF) por município: anexo da Portaria GM/MS nº 9.887/2025, ou cálculo pela regra (valor por habitante conforme o IDHM × população).
-- [ ] Conferir os números de alto custo e quimioterapia de alguns municípios com uma fonte independente (TabNet/DataSUS).
-- [ ] Coluna com as pessoas com tratamento de HIV interrompido (139.928 no país em 2025).
